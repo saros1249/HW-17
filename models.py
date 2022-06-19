@@ -1,4 +1,4 @@
-from app import db
+from alchemy import db
 
 class Movie(db.Model):
     __tablename__ = 'movie'

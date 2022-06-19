@@ -18,12 +18,12 @@ Accept: application/json
 
 ###
 
-GET http://localhost:5000/movies/1
+GET http://localhost:5000/movies/100
 Accept: application/json
 
 ###
 
-PUT http://localhost:5000/movies/1
+PUT http://localhost:5000/movies/15
 Accept: application/json
 Content-Type: application/json
 

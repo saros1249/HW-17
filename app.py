@@ -1,19 +1,23 @@
 # app.py
-
+from alchemy import db
 from flask import Flask, request, jsonify
 from flask_restx import Api, Resource
-from flask_sqlalchemy import SQLAlchemy
 from schemas import *
-from models import *
+from models import Movie, Director, Genre
 
 app = Flask(__name__)
+
+app.app_context().push()
+
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JSON_AS_ASCII'] = False
+app.config['RESTX_JSON'] = {'ensure_ascii':False, 'indent':3}
 
-db = SQLAlchemy(app)
+db.init_app(app)
 
 api = Api(app)
+
 movie_ns = api.namespace('movies')
 director_ns = api.namespace('directors')
 genre_ns = api.namespace('genres')
@@ -23,14 +27,15 @@ genre_ns = api.namespace('genres')
 class MoviesView(Resource):
     def get(self):
         movies = Movie.query.all()
-        return movies_schema.dump(movies), 200
 
+        if 'director_id' in request.args:
+        return movies_schema.dump(movies), 200
     def post(self):
-        new_data = request.json
-        new_movie = Movie(**new_data)
-        db.session.add(new_movie)
-        db.session.commit()
-        db.session.close()
+        with db.session.begin():
+            new_data = request.json
+            new_movie = Movie(**new_data)
+            db.session.add(new_movie)
+            db.session.commit()
         return 'Добавлен новый фильм', 201
 
 
@@ -47,18 +52,18 @@ class MovieView(Resource):
             return e, 404
 
     def put(self, movie_id):
-        movie = Movie.query.get(movie_id)
-        update_data = request.json
-        movie.title = update_data['title']
-        movie.description = update_data['description']
-        movie.trailer = update_data['trailer']
-        movie.year = update_data['year']
-        movie.rating = update_data['rating']
-        movie.genre_id = update_data['genre_id']
-        movie.director_id = update_data['director_id']
-        db.session.add(movie)
-        db.session.commit()
-        db.session.close()
+        with db.session.begin():
+            movie = Movie.query.get(movie_id)
+            update_data = request.json
+            movie.title = update_data['title']
+            movie.description = update_data['description']
+            movie.trailer = update_data['trailer']
+            movie.year = update_data['year']
+            movie.rating = update_data['rating']
+            movie.genre_id = update_data['genre_id']
+            movie.director_id = update_data['director_id']
+            db.session.add(movie)
+            db.session.commit()
         return f'Фильм с ID{movie_id} обновлён.', 200
 
     def delete(self, movie_id):
