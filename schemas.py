@@ -1,4 +1,6 @@
+#Схемы для зефира.
 from marshmallow import Schema, fields
+
 
 class MovieSchema(Schema):
     id = fields.Int()
@@ -10,13 +12,16 @@ class MovieSchema(Schema):
     genre_id = fields.Int()
     director_id = fields.Int()
 
+
 class DirectorSchema(Schema):
     id = fields.Int()
     name = fields.Str()
 
+
 class GenreSchema(Schema):
     id = fields.Int()
     name = fields.Str()
+
 
 movies_schema = MovieSchema(many=True)
 movie_schema = MovieSchema()

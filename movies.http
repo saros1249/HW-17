@@ -13,17 +13,17 @@ Content-Type: application/json
 
 ###
 
-GET http://localhost:5000/movies/
+GET http://localhost:5000/movies/?director_id=1&genre_id=1
 Accept: application/json
 
 ###
 
-GET http://localhost:5000/movies/100
+GET http://localhost:5000/movies/130
 Accept: application/json
 
 ###
 
-PUT http://localhost:5000/movies/15
+PUT http://localhost:5000/movies/10
 Accept: application/json
 Content-Type: application/json
 

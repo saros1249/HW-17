@@ -1,4 +1,6 @@
+#Модели таблиц БД
 from alchemy import db
+
 
 class Movie(db.Model):
     __tablename__ = 'movie'
@@ -12,6 +14,7 @@ class Movie(db.Model):
     genre = db.relationship("Genre")
     director_id = db.Column(db.Integer, db.ForeignKey("director.id"))
     director = db.relationship("Director")
+
 
 class Director(db.Model):
     __tablename__ = 'director'

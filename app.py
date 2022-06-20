@@ -12,7 +12,7 @@ app.app_context().push()
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///test.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JSON_AS_ASCII'] = False
-app.config['RESTX_JSON'] = {'ensure_ascii':False, 'indent':3}
+app.config['RESTX_JSON'] = {'ensure_ascii': False, 'indent': 3}
 
 db.init_app(app)
 
@@ -26,11 +26,22 @@ genre_ns = api.namespace('genres')
 @movie_ns.route('/')
 class MoviesView(Resource):
     def get(self):
-        movies = Movie.query.all()
 
-        if 'director_id' in request.args:
+        director_id = request.args.get('director_id')
+        genre_id = request.args.get('genre_id')
+
+        if director_id:
+            movies = Movie.query.filter(Movie.director_id == director_id).all()
+        elif genre_id:
+            movies = Movie.query.filter(Movie.genre_id == genre_id).all()
+        elif director_id and genre_id:
+            movies = Movie.query.filter(Movie.director_id == director_id and Movie.genre_id == genre_id).all()
+        else:
+            movies = Movie.query.all()
         return movies_schema.dump(movies), 200
+
     def post(self):
+
         with db.session.begin():
             new_data = request.json
             new_movie = Movie(**new_data)
@@ -44,36 +55,59 @@ class MovieView(Resource):
     def get(self, movie_id):
         try:
             movie = Movie.query.get(movie_id)
-            if movie is None:
-                return 'Запрошенный фильм не найден', 204
-            else:
+            if movie:
                 return movie_schema.dumps(movie), 200
+            return 'Запрошенный фильм не найден', 404
         except Exception as e:
             return e, 404
 
     def put(self, movie_id):
         with db.session.begin():
             movie = Movie.query.get(movie_id)
-            update_data = request.json
-            movie.title = update_data['title']
-            movie.description = update_data['description']
-            movie.trailer = update_data['trailer']
-            movie.year = update_data['year']
-            movie.rating = update_data['rating']
-            movie.genre_id = update_data['genre_id']
-            movie.director_id = update_data['director_id']
-            db.session.add(movie)
-            db.session.commit()
-        return f'Фильм с ID{movie_id} обновлён.', 200
+            if movie:
+                update_data = request.json
+                movie.title = update_data['title']
+                movie.description = update_data['description']
+                movie.trailer = update_data['trailer']
+                movie.year = update_data['year']
+                movie.rating = update_data['rating']
+                movie.genre_id = update_data['genre_id']
+                movie.director_id = update_data['director_id']
+                db.session.add(movie)
+                db.session.commit()
+                return f'Фильм с ID{movie_id} обновлён.', 200
+            return 'Запрошенный фильм не найден', 404
+
+    def patch(self, movie_id):
+        with db.session.begin():
+            movie = Movie.query.get(movie_id)
+            if movie:
+                update_data = request.json
+                if 'title' in update_data:
+                    movie.title = update_data['title']
+                elif 'description' in update_data:
+                    movie.description = update_data['description']
+                elif 'trailer' in update_data:
+                    movie.trailer = update_data['trailer']
+                elif 'year' in update_data:
+                    movie.year = update_data['year']
+                elif 'rating' in update_data:
+                    movie.rating = update_data['rating']
+                elif 'genre_id' in update_data:
+                    movie.genre_id = update_data['genre_id']
+                elif 'director_id' in update_data:
+                    movie.director_id = update_data['director_id']
+                return 'Данные успешно обновлены'
+            return f'Запрошенный фильм не найден', 404
 
     def delete(self, movie_id):
         with db.session.begin():
             movie = Movie.query.get(movie_id)
-            if movie is None:
-                return f'Запрошенный фильм c ID{movie_id}не найден', 204
-            db.session.delete(movie)
-            db.session.commit()
-        return f'Фильм с ID{movie_id} удaлён.', 204
+            if movie:
+                db.session.delete(movie)
+                db.session.commit()
+                return f'Фильм с ID{movie_id} удaлён.', 204
+            return f'Запрошенный фильм не найден', 404
 
 
 @director_ns.route('/')
@@ -96,31 +130,31 @@ class DirectorView(Resource):
     def get(self, director_id):
         try:
             director = Director.query.get(director_id)
-            if director is None:
-                return f'Запрошенный режиссёр c ID{director_id} не найден', 204
-            return director_schema.dumps(director), 200
+            if director:
+                return director_schema.dumps(director), 200
+            return f'Запрошенный режиссёр не найден', 404
         except Exception as e:
             return e, 404
 
     def put(self, director_id):
         with db.session.begin():
             director = Director.query.get(director_id)
-            if director is None:
-                return f'Запрошенный режиссёр c ID{director_id}не найден', 204
-            update_data = request.json
-            director.name = update_data['name']
-            db.session.add(director)
-            db.session.commit()
-        return f'Pежиссёр с ID{director_id} обновлён.', 200
+            if director:
+                update_data = request.json
+                director.name = update_data['name']
+                db.session.add(director)
+                db.session.commit()
+                return f'Pежиссёр с ID{director_id} обновлён.', 200
+            return f'Запрошенный режиссёр не найден', 404
 
     def delete(self, director_id):
         with db.session.begin():
             director = Director.query.get(director_id)
-            if director is None:
-                return f'Запрошенный режиссёр c ID{director_id}не найден', 204
-            db.session.delete(director)
-            db.session.commit()
-        return f'Pежиссёр с ID{director_id} удaлён.', 204
+            if director:
+                db.session.delete(director)
+                db.session.commit()
+                return f'Pежиссёр с ID{director_id} удaлён.', 204
+            return f'Запрошенный режиссёр не найден', 404
 
 
 @genre_ns.route('/')
@@ -143,31 +177,31 @@ class GenreView(Resource):
     def get(self, genre_id):
         try:
             genre = Genre.query.get(genre_id)
-            if genre is None:
-                return 'Запрошенный жанр не найден', 204
-            return genre_schema.dumps(genre), 200
+            if genre:
+                return genre_schema.dumps(genre), 200
+            return 'Запрошенный жанр не найден', 404
         except Exception as e:
             return e, 404
 
     def put(self, genre_id):
         with db.session.begin():
             genre = Genre.query.get(genre_id)
-            if genre is None:
-                return 'Запрошенный жанр не найден', 204
-            update_data = request.json
-            genre.name = update_data['name']
-            db.session.add(genre)
-            db.session.commit()
-        return f'Жанр с ID{genre_id} обновлён.', 200
+            if genre:
+                update_data = request.json
+                genre.name = update_data['name']
+                db.session.add(genre)
+                db.session.commit()
+                return f'Жанр с ID{genre_id} обновлён.', 200
+        return 'Запрошенный жанр не найден', 404
 
     def delete(self, genre_id):
         with db.session.begin():
             genre = Genre.query.get(genre_id)
-            if genre is None:
-                return f'Запрошенный режиссёр c ID{genre_id}не найден', 204
-            db.session.delete(genre)
-            db.session.commit()
-        return f'Жанр с ID{genre_id} удaлён.', 204
+            if genre:
+                db.session.delete(genre)
+                db.session.commit()
+                return f'Жанр с ID{genre_id} удaлён.', 204
+            return f'Запрошенный жанр не найден', 404
 
 
 if __name__ == '__main__':
